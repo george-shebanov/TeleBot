@@ -1,62 +1,72 @@
 import telebot
-from config import TOKEN, currencies
+from config import TOKEN, keys
 from extensions import APIException, Converter
-from keyboards import create_mrk
+
+
+def create_mrk(but=None):
+    markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True)
+    buttons = []
+    for val in keys.keys():
+        if val != but:
+            buttons.append(val)
+
+    markup.add(*buttons)
+    return markup
+
 
 bot = telebot.TeleBot(TOKEN)
 
 
 @bot.message_handler(commands=['start', 'help'])
-def preview(message: telebot.types.Message):
-    text = """Вас приветствует бот конвертор валют
+def info_bot_message(message):
+    text = """Вас приветствует Бот_Конвертер_Валют!!!
 
-чтобы посмотреть список доступных валют используйте команду /values
+Увидеть список валют можно с помощью команды /val
 
-чтобы начать конвертацию используйте команду /convert"""
-
-    bot.send_message(message.chat.id, text)
-
-
-@bot.message_handler(commands=['values'])
-def val_info(message: telebot.types.Message):
-    text = "Доступные валюты:"
-    for val in currencies.keys():
-        text = '\n'.join((text, val))
-
-    bot.send_message(message.chat.id, text)
+Что бы начать конвертацию введите команду /conv"""
+    bot.reply_to(message, text)
 
 
-@bot.message_handler(commands=['convert'])
-def insert_values(message: telebot.types.Message):
-    text = "Выберите валюту из которой конвертировать"
+@bot.message_handler(commands=['val'])
+def info_values(message):
+    text = "доступные валюты:\n"
+    for key in keys.keys():
+        text = '\n'.join((text, key))
+    bot.reply_to(message, text)
+
+
+@bot.message_handler(commands=['conv'])
+def base_handler(message: telebot.types.Message):
+    text = "Выберите валюту, из которой конвентировать:"
     bot.send_message(message.chat.id, text, reply_markup=create_mrk())
-    bot.register_next_step_handler(message, base_curr)
+    bot.register_next_step_handler(message, quote_handler)
 
 
-def base_curr(message: telebot.types.Message):
+def quote_handler(message: telebot.types.Message):
     base = message.text.strip().lower()
-    text = "Выберите валюту в котрую конвертировать"
-    bot.send_message(message.chat.id, text, reply_markup=create_mrk())
-    bot.register_next_step_handler(message, quote_curr, base)
+    text = "Выбеирте валюту, в которую конвертировать:"
+    bot.send_message(message.chat.id, text, reply_markup=create_mrk(base))
+    bot.register_next_step_handler(message, amount_handler, base)
 
 
-def quote_curr(message: telebot.types.Message, base):
+def amount_handler(message: telebot.types.Message, base):
     quote = message.text.strip().lower()
-    text = 'Напишите количество конвертируемой валюты'
-    bot.send_message(message.chat.id, text)
-    bot.register_next_step_handler(message, start_convert, base, quote)
+    text = "Напишите количество конвертируемой валюты:"
+    bot.send_message(message.chat.id, text, reply_markup=create_mrk(quote))
+    bot.register_next_step_handler(message, main_handler, base, quote)
 
 
-def start_convert(message: telebot.types.Message, base, quote):
+def main_handler(message: telebot.types.Message, base, quote):
     amount = message.text.strip()
     try:
-        result = Converter.get_price(base, quote, amount)
-    except APIException as e:
-        bot.send_message(message.chat.id, f'Ошибка пользователя:\n{e}')
-    except Exception as e:
-        bot.send_message(message.chat.id, f'Ошибка системы\n{e}')
+        total_base = Converter.get_price(base, quote, amount)
+    except APIException as a:
+        bot.reply_to(message, f"Ошибка пользователя\n{a}")
+    except Exception as a:
+        bot.reply_to(message, f"Неудалось обработать запрос\n{a}")
     else:
-        bot.send_message(message.chat.id, f'Результат конвертации:\n{amount} {base} = {result} {quote}')
+
+        bot.send_message(message.chat.id, f"{amount} {keys[base]} = {total_base} {keys[quote]}")
 
 
 bot.polling()

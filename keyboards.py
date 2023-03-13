@@ -1,13 +1,13 @@
 from telebot import types
-from config import currencies
+from config import keys
 
 
 def create_mrk(but=None):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
     buttons = []
-    for val in currencies.keys():
+    for val in keys.keys():
         if val != but:
-            buttons.append(val.capitalize())
+            buttons.append(val)
 
     markup.add(*buttons)
     return markup

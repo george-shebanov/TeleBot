@@ -1,7 +1,7 @@
 import requests
 import json
 
-from config import currencies
+from config import keys
 
 
 class APIException(Exception):
@@ -14,11 +14,11 @@ class Converter:
         if base == quote:
             raise APIException("Невозможно конвертировать одинаковые валюты")
         try:
-            base_tiker = currencies[base]
+            base_tiker = keys[base]
         except KeyError:
             raise APIException(f"Невозможно обработать валюту: {base}")
         try:
-            quote_tiker = currencies[quote]
+            quote_tiker = keys[quote]
         except KeyError:
             raise APIException(f"Невозможно обработать валюту: {quote}")
         try:
