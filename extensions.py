@@ -1,7 +1,7 @@
 import requests
 import json
 
-from config import currencies
+from config import currencies,key
 
 
 class APIException(Exception):
@@ -30,7 +30,7 @@ class Converter:
 
         payload = {}
         headers = {
-            "apikey": "lW7JI52SzSN89mGAmugWq0pg7jQ9EfxN"
+            "apikey": key
         }
 
         response = requests.request("GET", url, headers=headers, data=payload)
